@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "quilter",
+        "title": "Quilter",
         "width": 800,
         "height": 600
       }
