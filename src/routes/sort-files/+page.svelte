@@ -1,9 +1,14 @@
 <script lang="ts">
+  import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
 
-  type Folder = {
-    path: string;
-    status: "checking" | "ok" | "error";
+  type Folder =
+    | { path: string; status: "checking" | "ok"; unwantedFiles?: never }
+    | { path: string; status: "error"; unwantedFiles: string[] };
+
+  type FilesMap = {
+    files: string[];
+    folder: string;
   };
 
   let folders: Folder[] = $state([]);
@@ -19,7 +24,29 @@
         path: result,
         status: "checking",
       });
+      checkFolder(result);
     }
+  };
+
+  const checkFolder = (path: string) => {
+    invoke("check_folder", { path }).then((res: unknown) => {
+      const filesMap = res as FilesMap;
+      console.log("Folder Checked");
+      if (filesMap.files.length > 0) {
+        const folder = folders.find((f) => f.path === filesMap.folder);
+        if (folder) {
+          folder.status = "error";
+          folder.unwantedFiles = filesMap.files;
+          console.log("Folder has unwanted files", filesMap.files);
+        }
+      } else {
+        const folder = folders.find((f) => f.path === filesMap.folder);
+        if (folder) {
+          folder.status = "ok";
+          console.log("Folder is good");
+        }
+      }
+    });
   };
 
   const openFinalFolderSelect = async () => {
@@ -45,6 +72,23 @@
       (event.target as HTMLInputElement).value = "";
     }
   };
+
+  const deleteFile = (folder: string, file: string) => {
+    invoke("delete_file", { folder, filename: file }).then((res: unknown) => {
+      console.log("File Deleted", res);
+      checkFolder(folder);
+    });
+  };
+
+  const deleteAllUnwantedFiles = (folder: Folder) => {
+    invoke("delete_files_in_folder", {
+      folder: folder.path,
+      files: folder.unwantedFiles,
+    }).then((res: unknown) => {
+      console.log("Folder Deleted", res);
+      checkFolder(folder.path);
+    });
+  };
 </script>
 
 <main class="container">
@@ -62,25 +106,75 @@
         {#if folders.length > 0}
           <ul>
             {#each folders as folder (folder)}
-              <li>
-                <div class="loader"></div>
-                <div class="ok hidden">
+              {#if folder.status === "checking"}
+                <li class="row">
+                  <div class="loader"></div>
+                  <small>
+                    <code>{folder.path}</code>
+                  </small>
+                </li>
+              {:else if folder.status === "ok"}
+                <li class="row bg-success">
                   <img src="/check.svg" class="icon" alt="Folder Selected" />
-                </div>
-                <div class="error hidden">
-                  <img src="/cancel.svg" class="icon" alt="Folder Selected" />
-                </div>
-                <small>
-                  <code>{folder.path}</code>
-                </small>
-                <button class="close" onclick={() => removeFolder(folder.path)}>
-                  <img
-                    src="/trash.svg"
-                    class="icon close"
-                    alt="Remove Folder"
-                  />
-                </button>
-              </li>
+                  <small>
+                    <code>{folder.path}</code>
+                  </small>
+                  <button
+                    class="close"
+                    onclick={() => removeFolder(folder.path)}
+                  >
+                    <img
+                      src="/trash.svg"
+                      class="icon close"
+                      alt="Remove Folder"
+                    />
+                  </button>
+                </li>
+              {:else if folder.status === "error"}
+                <li class="bg-error">
+                  <div class="row">
+                    <img src="/cancel.svg" class="icon" alt="Folder Selected" />
+                    <small>
+                      <code>{folder.path}</code>
+                    </small>
+                    <button
+                      class="close"
+                      onclick={() => removeFolder(folder.path)}
+                    >
+                      <img
+                        src="/trash.svg"
+                        class="icon close"
+                        alt="Remove Folder"
+                      />
+                    </button>
+                  </div>
+                  <div class="column">
+                    <div class="row">
+                      <small>These files need to be deleted first</small>
+                      <button onclick={() => deleteAllUnwantedFiles(folder)}>
+                        Delete All
+                      </button>
+                    </div>
+                    <ul>
+                      {#each folder.unwantedFiles as file (file)}
+                        <li class="elevated row">
+                          <small><code>{file}</code></small>
+                          <button
+                            class="close"
+                            onclick={() => deleteFile(folder.path, file)}
+                          >
+                            <img
+                              src="/trash.svg"
+                              class="icon"
+                              alt="Remove File"
+                            />
+                          </button>
+                        </li>
+                      {/each}
+                    </ul>
+                  </div>
+                </li>
+              {/if}
             {/each}
           </ul>
         {/if}
@@ -151,7 +245,7 @@
     border-radius: 50%;
     padding: 3px;
     background:
-      radial-gradient(farthest-side, gray 95%, #0000) 50% 0/10px 10px no-repeat,
+      radial-gradient(farthest-side, gray 95%, #0000) 50% 0/25px 25px no-repeat,
       radial-gradient(
           farthest-side,
           #0000 calc(100% - 5px),
@@ -174,16 +268,6 @@
     }
   }
 
-  .ok,
-  .error {
-    width: 25px;
-    height: 25px;
-  }
-
-  .hidden {
-    display: none;
-  }
-
   ul {
     list-style-type: none;
     padding: 0;
@@ -191,13 +275,38 @@
   }
 
   li {
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
-    padding: 5px;
     border: 1px solid #646cff;
     border-radius: 5px;
     margin: 5px 0;
+    img {
+      width: 25px;
+      height: 25px;
+    }
+  }
+  .row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 5px;
+  }
+
+  .bg-error {
+    background-color: #ff400040;
+    color: white;
+  }
+
+  .bg-error .elevated {
+    background-color: #ff400040;
+    color: white;
+    padding: 0px;
+    margin: 5px;
+    border-radius: 5px;
+  }
+
+  .bg-success {
+    background-color: #00ff0040;
+    color: white;
   }
 
   button,
