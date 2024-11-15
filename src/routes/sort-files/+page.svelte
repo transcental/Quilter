@@ -62,10 +62,6 @@
     folders = folders.filter((f) => f.path !== folder);
   };
 
-  const submitForm = async (event: Event) => {
-    event.preventDefault();
-  };
-
   const validateNumberInput = (event: Event) => {
     const input = (event.target as HTMLInputElement).value;
     if (isNaN(parseInt(input))) {
@@ -89,33 +85,57 @@
       checkFolder(folder.path);
     });
   };
+
+  const sortFiles = () => {
+    invoke("sort_files", {
+      frameFolders: folders.map((f) => f.path),
+      finalFolder,
+      views,
+    }).then((res: unknown) => {
+      console.log("Files Sorted", res);
+    });
+  };
 </script>
 
 <main class="container">
   <h1>Sort Files</h1>
-  <form onsubmit={submitForm}>
-    <div class="column">
-      <div class="column form-input">
-        <h4>Frame Folders</h4>
-        <small
-          >These should be selected in the order you want the animation built in</small
-        >
-        <button onclick={openFolderSelect} id="folders" name="folders"
-          >Select Folder</button
-        >
-        {#if folders.length > 0}
-          <ul>
-            {#each folders as folder (folder)}
-              {#if folder.status === "checking"}
-                <li class="row">
-                  <div class="loader"></div>
-                  <small>
-                    <code>{folder.path}</code>
-                  </small>
-                </li>
-              {:else if folder.status === "ok"}
-                <li class="row bg-success">
-                  <img src="/check.svg" class="icon" alt="Folder Selected" />
+  <div class="column">
+    <div class="column form-input">
+      <h4>Frame Folders</h4>
+      <small
+        >These should be selected in the order you want the animation built in</small
+      >
+      <button onclick={openFolderSelect} id="folders" name="folders"
+        >Select Folder</button
+      >
+      {#if folders.length > 0}
+        <ul>
+          {#each folders as folder (folder)}
+            {#if folder.status === "checking"}
+              <li class="row">
+                <div class="loader"></div>
+                <small>
+                  <code>{folder.path}</code>
+                </small>
+              </li>
+            {:else if folder.status === "ok"}
+              <li class="row bg-success">
+                <img src="/check.svg" class="icon" alt="Folder Selected" />
+                <small>
+                  <code>{folder.path}</code>
+                </small>
+                <button class="close" onclick={() => removeFolder(folder.path)}>
+                  <img
+                    src="/trash.svg"
+                    class="icon close"
+                    alt="Remove Folder"
+                  />
+                </button>
+              </li>
+            {:else if folder.status === "error"}
+              <li class="bg-error">
+                <div class="row">
+                  <img src="/cancel.svg" class="icon" alt="Folder Selected" />
                   <small>
                     <code>{folder.path}</code>
                   </small>
@@ -129,81 +149,78 @@
                       alt="Remove Folder"
                     />
                   </button>
-                </li>
-              {:else if folder.status === "error"}
-                <li class="bg-error">
+                </div>
+                <div class="column">
                   <div class="row">
-                    <img src="/cancel.svg" class="icon" alt="Folder Selected" />
-                    <small>
-                      <code>{folder.path}</code>
-                    </small>
-                    <button
-                      class="close"
-                      onclick={() => removeFolder(folder.path)}
-                    >
-                      <img
-                        src="/trash.svg"
-                        class="icon close"
-                        alt="Remove Folder"
-                      />
+                    <small>These files need to be deleted first</small>
+                    <button onclick={() => deleteAllUnwantedFiles(folder)}>
+                      Delete All
                     </button>
                   </div>
-                  <div class="column">
-                    <div class="row">
-                      <small>These files need to be deleted first</small>
-                      <button onclick={() => deleteAllUnwantedFiles(folder)}>
-                        Delete All
-                      </button>
-                    </div>
-                    <ul>
-                      {#each folder.unwantedFiles as file (file)}
-                        <li class="elevated row">
-                          <small><code>{file}</code></small>
-                          <button
-                            class="close"
-                            onclick={() => deleteFile(folder.path, file)}
-                          >
-                            <img
-                              src="/trash.svg"
-                              class="icon"
-                              alt="Remove File"
-                            />
-                          </button>
-                        </li>
-                      {/each}
-                    </ul>
-                  </div>
-                </li>
-              {/if}
-            {/each}
-          </ul>
-        {/if}
-      </div>
-      <div class="column form-input">
-        <h4>Amount of Views</h4>
-        <small>How many images are there per frame</small>
-        <input
-          type="number"
-          oninput={validateNumberInput}
-          onchange={(e) =>
-            (views = parseInt((e.target as HTMLInputElement).value))}
-        />
-      </div>
-      <div class="column form-input">
-        <h4>Final Frame Folder</h4>
-        <small>Where should the final frame sequence be saved</small>
-        <button onclick={openFinalFolderSelect} id="final" name="final"
-          >Select Folder</button
-        >
-        {#if finalFolder}
-          <small><code>{finalFolder}</code></small>
-        {/if}
-      </div>
-      <div class="column form-input">
-        <button type="submit"><strong>Sort Files</strong></button>
-      </div>
+                  <ul>
+                    {#each folder.unwantedFiles as file (file)}
+                      <li class="elevated row">
+                        <small><code>{file}</code></small>
+                        <button
+                          class="close"
+                          onclick={() => deleteFile(folder.path, file)}
+                        >
+                          <img
+                            src="/trash.svg"
+                            class="icon"
+                            alt="Remove File"
+                          />
+                        </button>
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
+              </li>
+            {/if}
+          {/each}
+        </ul>
+      {/if}
     </div>
-  </form>
+    <div class="column form-input">
+      <h4>Amount of Views</h4>
+      <small>How many images are there per frame</small>
+      <input
+        type="number"
+        oninput={validateNumberInput}
+        bind:value={views}
+        onchange={(e) =>
+          (views = parseInt((e.target as HTMLInputElement).value))}
+      />
+    </div>
+    <div class="column form-input">
+      <h4>Final Frame Folder</h4>
+      <small>Where should the final frame sequence be saved</small>
+      <button onclick={openFinalFolderSelect} id="final" name="final"
+        >Select Folder</button
+      >
+      {#if finalFolder}
+        <small><code>{finalFolder}</code></small>
+      {/if}
+    </div>
+    <div class="column form-input">
+      <button
+        type="submit"
+        class={folders.length === 0 ||
+        folders.some((folder) => folder.status !== "ok") ||
+        !finalFolder ||
+        !views
+          ? "disabled"
+          : ""}
+        disabled={folders.length === 0 ||
+          folders.some((folder) => folder.status !== "ok") ||
+          !finalFolder ||
+          !views}
+        onclick={sortFiles}
+      >
+        <strong>Sort Files</strong>
+      </button>
+    </div>
+  </div>
 </main>
 
 <style>
@@ -293,7 +310,6 @@
 
   .bg-error {
     background-color: #ff400040;
-    color: white;
   }
 
   .bg-error .elevated {
@@ -306,7 +322,6 @@
 
   .bg-success {
     background-color: #00ff0040;
-    color: white;
   }
 
   button,
@@ -321,6 +336,12 @@
 
   button {
     cursor: pointer;
+  }
+
+  button.disabled {
+    background-color: #646cff40;
+    color: #646cff80;
+    cursor: not-allowed;
   }
 
   button.close {
