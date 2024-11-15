@@ -59,4 +59,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tauri-artifacts-${{ runner.os }}
-          path: src-tauri/target/release/bundle
+          path: ${{ matrix.platform == 'macos-latest' && (matrix.args == '--target aarch64-apple-darwin' && 'src-tauri/target/aarch64-apple-darwin/bundle/release' || 'src-tauri/target/x86_64-apple-darwin/bundle/release') || 'src-tauri/target/release' }}
