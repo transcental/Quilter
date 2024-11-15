@@ -76,12 +76,15 @@
     });
   };
 
-  const deleteAllUnwantedFiles = (folder: Folder) => {
-    invoke("delete_files_in_folder", {
+  const deleteOrMoveAllUnwantedFiles = (
+    folder: Folder,
+    shouldDelete: boolean,
+  ) => {
+    invoke("delete_move_files_in_folder", {
       folder: folder.path,
       files: folder.unwantedFiles,
+      delete: shouldDelete,
     }).then((res: unknown) => {
-      console.log("Folder Deleted", res);
       checkFolder(folder.path);
     });
   };
@@ -156,7 +159,15 @@
                 <div class="column">
                   <div class="row">
                     <small>These files need to be deleted first</small>
-                    <button onclick={() => deleteAllUnwantedFiles(folder)}>
+                    <button
+                      onclick={() =>
+                        deleteOrMoveAllUnwantedFiles(folder, false)}
+                    >
+                      Move All
+                    </button>
+                    <button
+                      onclick={() => deleteOrMoveAllUnwantedFiles(folder, true)}
+                    >
                       Delete All
                     </button>
                   </div>
