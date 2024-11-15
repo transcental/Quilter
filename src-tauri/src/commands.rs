@@ -36,9 +36,28 @@ pub fn delete_file(folder: &str, filename: String) {
 }
 
 #[tauri::command]
-pub fn delete_files_in_folder(folder: String, files: Vec<String>) {
-    for file in files {
-        delete_file(&folder, file);
+pub fn move_file(folder: &str, filename: String, destination: &str) {
+    let path = std::path::Path::new(folder).join(&filename);
+    let path = path.to_str().unwrap();
+    let destination = std::path::Path::new(destination).join(&filename);
+    let destination = destination.to_str().unwrap();
+    fs::rename(path, destination).unwrap();
+}
+
+#[tauri::command]
+pub fn delete_move_files_in_folder(folder: String, files: Vec<String>, delete: bool) {
+    if !delete {
+        let parent_folder = std::path::Path::new(&folder).parent().unwrap();
+        let unwanted_folder = parent_folder.join("unwanted_files");
+        let unwanted_folder = unwanted_folder.to_str().unwrap();
+        fs::create_dir_all(unwanted_folder).unwrap();
+        for file in files {
+            move_file(&folder, file, unwanted_folder);
+        }
+    } else {
+        for file in files {
+            delete_file(&folder, file);
+        }
     }
 }
 

@@ -10,7 +10,8 @@ pub fn run() {
             commands::sort_files,
             commands::check_folder,
             commands::delete_file,
-            commands::delete_files_in_folder,
+            commands::move_file,
+            commands::delete_move_files_in_folder,
             commands::sort_files
         ])
         .run(tauri::generate_context!())
