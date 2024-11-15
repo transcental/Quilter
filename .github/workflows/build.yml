@@ -58,5 +58,5 @@ jobs:
       - name: upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: tauri-artifacts
+          name: tauri-artifacts-${{ runner.os }}
           path: src-tauri/target/release/bundle
