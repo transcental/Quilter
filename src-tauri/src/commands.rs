@@ -4,7 +4,7 @@ use std::fs;
 #[derive(Serialize)]
 pub struct FilesMap {
     files: Vec<String>,
-    folder: String
+    folder: String,
 }
 
 #[tauri::command]
@@ -22,9 +22,9 @@ pub fn check_folder(path: String) -> FilesMap {
 
     let files_map = FilesMap {
         files: unwanted_files,
-        folder: path
+        folder: path,
     };
-    
+
     files_map.into()
 }
 
@@ -40,7 +40,7 @@ pub fn delete_files_in_folder(folder: String, files: Vec<String>) {
     for file in files {
         delete_file(&folder, file);
     }
-} 
+}
 
 #[tauri::command]
 pub fn sort_files(frame_folders: Vec<String>, final_folder: String, views: usize) {
@@ -50,7 +50,11 @@ pub fn sort_files(frame_folders: Vec<String>, final_folder: String, views: usize
             let files = fs::read_dir(folder.clone()).unwrap();
             for file in files {
                 let filename = file.unwrap().file_name();
-                let current_view = filename.to_str().unwrap().split("_v").collect::<Vec<&str>>()[1];
+                let current_view = filename
+                    .to_str()
+                    .unwrap()
+                    .split("_v")
+                    .collect::<Vec<&str>>()[1];
                 let current_view = current_view.split(".").collect::<Vec<&str>>()[0];
                 let current_view = match current_view.parse::<usize>() {
                     Ok(view) => view,
@@ -59,7 +63,9 @@ pub fn sort_files(frame_folders: Vec<String>, final_folder: String, views: usize
                         continue;
                     }
                 };
-                if current_view < (views/no_of_folders) * (i + 1) && current_view >= (views/no_of_folders) * i {
+                if current_view < (views / no_of_folders) * (i + 1)
+                    && current_view >= (views / no_of_folders) * i
+                {
                     let original_file = std::path::Path::new(&folder).join(&filename);
                     let original_file = original_file.to_str().unwrap();
                     let path = std::path::Path::new(&final_folder).join(&filename);
