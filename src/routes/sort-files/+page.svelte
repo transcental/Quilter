@@ -97,6 +97,9 @@
   };
 </script>
 
+<a href="/" class="home">
+  <img src="/home.svg" alt="Home" />
+</a>
 <main class="container">
   <h1>Sort Files</h1>
   <div class="column">
@@ -238,6 +241,13 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;
+  }
+
+  .home img {
+    width: 25px;
+    aspect-ratio: 1;
+    height: 25px;
+    position: fixed;
   }
 
   .container {
