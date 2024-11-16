@@ -3,7 +3,9 @@
   <p>This page is not implemented yet</p>
   <div class="row">
     <a href="/">
-      <img src="/home.svg" class="logo home" alt="Vite Logo" />
+      <svg class="logo home">
+        <use xlink:href="home.svg#home"></use>
+      </svg>
       <h4>Go Home</h4>
     </a>
   </div>
@@ -62,6 +64,10 @@
 
     a:hover {
       color: #24c8db;
+    }
+
+    svg {
+      fill: #f6f6f6;
     }
   }
 </style>
