@@ -4,19 +4,28 @@
 
   <div class="row">
     <a href="/sort-files">
-      <img src="/sort.svg" class="logo sort-files" alt="Sort Files" />
+      <!-- <img src="/sort.svg" class="logo sort-files" alt="Sort Files" /> -->
+      <svg class="logo sort-files">
+        <use xlink:href="sort.svg#sort"></use>
+      </svg>
       <h4>Sort Files</h4>
     </a>
     <a href="/create-quilt">
-      <img
+      <!-- <img
         src="/sewing-machine.svg"
         class="logo create-quilt"
         alt="Create Quilt"
-      />
+      /> -->
+      <svg class="logo create-quilt">
+        <use xlink:href="sewing-machine.svg#sewing-machine"></use>
+      </svg>
       <h4>Create Quilt</h4>
     </a>
     <a href="/cast">
-      <img src="/to-pip.svg" class="logo cast" alt="Cast to Glass" />
+      <!-- <img src="/to-pip.svg" class="logo cast" alt="Cast to Glass" /> -->
+      <svg class="logo cast">
+        <use xlink:href="to-pip.svg#to-pip"></use>
+      </svg>
       <h4>Cast to Glass</h4>
     </a>
   </div>
@@ -94,6 +103,11 @@
     text-align: center;
   }
 
+  svg {
+    fill: #0f0f0f;
+    width: 6em;
+  }
+
   @media (prefers-color-scheme: dark) {
     :root {
       color: #f6f6f6;
@@ -102,6 +116,10 @@
 
     a:hover {
       color: #24c8db;
+    }
+
+    svg {
+      fill: #f6f6f6;
     }
   }
 

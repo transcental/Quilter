@@ -101,7 +101,10 @@
 </script>
 
 <a href="/" class="home">
-  <img src="/home.svg" alt="Home" />
+  <!-- <img src="/home.svg" alt="Home" />  -->
+  <svg>
+    <use xlink:href="home.svg#home"></use>
+  </svg>
 </a>
 <main class="container">
   <h1>Sort Files</h1>
@@ -126,22 +129,31 @@
               </li>
             {:else if folder.status === "ok"}
               <li class="row bg-success">
-                <img src="/check.svg" class="icon" alt="Folder Selected" />
+                <!-- <img src="/check.svg" class="icon" alt="Folder Selected" /> -->
+                <svg class="icon">
+                  <use xlink:href="check.svg#check"></use>
+                </svg>
                 <small>
                   <code>{folder.path}</code>
                 </small>
                 <button class="close" onclick={() => removeFolder(folder.path)}>
-                  <img
+                  <!-- <img
                     src="/trash.svg"
                     class="icon close"
                     alt="Remove Folder"
-                  />
+                  /> -->
+                  <svg class="icon close">
+                    <use xlink:href="trash.svg#trash"></use>
+                  </svg>
                 </button>
               </li>
             {:else if folder.status === "error"}
               <li class="bg-error">
                 <div class="row">
-                  <img src="/cancel.svg" class="icon" alt="Folder Selected" />
+                  <!-- <img src="/cancel.svg" class="icon" alt="Folder Selected" /> -->
+                  <svg class="icon">
+                    <use xlink:href="cancel.svg#cancel"></use>
+                  </svg>
                   <small>
                     <code>{folder.path}</code>
                   </small>
@@ -149,11 +161,14 @@
                     class="close"
                     onclick={() => removeFolder(folder.path)}
                   >
-                    <img
+                    <!-- <img
                       src="/trash.svg"
                       class="icon close"
                       alt="Remove Folder"
-                    />
+                    /> -->
+                    <svg class="icon close">
+                      <use xlink:href="trash.svg#trash"></use>
+                    </svg>
                   </button>
                 </div>
                 <div class="column">
@@ -179,11 +194,14 @@
                           class="close"
                           onclick={() => deleteFile(folder.path, file)}
                         >
-                          <img
+                          <!-- <img
                             src="/trash.svg"
                             class="icon"
                             alt="Remove File"
-                          />
+                          /> -->
+                          <svg class="icon">
+                            <use xlink:href="trash.svg#trash"></use>
+                          </svg>
                         </button>
                       </li>
                     {/each}
@@ -254,7 +272,7 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  .home img {
+  .home svg {
     width: 25px;
     aspect-ratio: 1;
     height: 25px;
@@ -316,11 +334,14 @@
     border: 1px solid #646cff;
     border-radius: 5px;
     margin: 5px 0;
-    img {
-      width: 25px;
-      height: 25px;
-    }
+    overflow: scroll;
   }
+
+  li svg {
+    width: 25px;
+    height: 25px;
+  }
+
   .row {
     display: flex;
     justify-content: center;
@@ -331,6 +352,7 @@
 
   .bg-error {
     background-color: #ff400040;
+    /* icon should be at the right */
   }
 
   .bg-error .elevated {
@@ -339,6 +361,12 @@
     padding: 0px;
     margin: 5px;
     border-radius: 5px;
+    justify-content: space-between;
+  }
+
+  small {
+    font-size: 0.8em;
+    margin: 5px;
   }
 
   .bg-success {
@@ -380,10 +408,20 @@
     text-align: center;
   }
 
+  svg {
+    fill: #0f0f0f;
+    width: 16px;
+    height: 16px;
+  }
+
   @media (prefers-color-scheme: dark) {
     :root {
       color: #f6f6f6;
       background-color: #2f2f2f;
+    }
+
+    svg {
+      fill: #f6f6f6;
     }
   }
 </style>
