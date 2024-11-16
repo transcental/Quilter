@@ -1,11 +1,13 @@
-name: "build"
+name: "publish"
 
 on:
   workflow_dispatch:
   push:
+    branches:
+      - release
 
 jobs:
-  build-tauri:
+  publish-tauri:
     permissions:
       contents: write
     strategy:
@@ -49,14 +51,15 @@ jobs:
 
       - name: install frontend dependencies
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
-        run: bun install # change this to npm or pnpm depending on which one you use.
+        run: bun install
 
       - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          releaseName: "App v__VERSION__"
+          releaseBody: "See the assets to download this version and install."
+          releaseDraft: true
+          prerelease: false
           args: ${{ matrix.args }}
-
-      - name: upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: tauri-artifacts-${{ runner.os }}-${{ matrix.platform == 'macos-latest' && (matrix.args == '--target aarch64-apple-darwin' && 'arm' || 'intel') || matrix.platform }}
-          path: ${{ matrix.platform == 'macos-latest' && (matrix.args == '--target aarch64-apple-darwin' && 'src-tauri/target/aarch64-apple-darwin/release/bundle' || 'src-tauri/target/x86_64-apple-darwin/release/bundle') || 'src-tauri/target/release/bundle' }}
