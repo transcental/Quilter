@@ -1,3 +1,52 @@
+<script lang="ts">
+  import { invoke } from "@tauri-apps/api/core";
+  import { ask, message } from "@tauri-apps/plugin-dialog";
+  import { check } from "@tauri-apps/plugin-updater";
+
+  async function checkForAppUpdates(userAsked: boolean = false) {
+    const update = await check();
+    console.log(update);
+    if (update === null && userAsked) {
+      await message("You are on the latest version. Yay!", {
+        title: "No Update Available",
+        kind: "info",
+        okLabel: "OK",
+      });
+      return;
+    } else if (update?.available) {
+      const yes = await ask(
+        `Update to ${update.version} is available!\n\nRelease notes: ${update.body}`,
+        {
+          title: "Update Available",
+          kind: "info",
+          okLabel: "Update",
+          cancelLabel: "Cancel",
+        },
+      );
+      if (yes) {
+        await update.downloadAndInstall();
+        // Restart the app after the update is installed by calling the Tauri command that handles restart for your app
+        // It is good practice to shut down any background processes gracefully before restarting
+        // As an alternative, you could ask the user to restart the app manually
+        await invoke("graceful_restart");
+      }
+    }
+  }
+
+  // run on boot
+  checkForAppUpdates();
+</script>
+
+<button
+  on:click={() => checkForAppUpdates(true)}
+  class="updater"
+  aria-label="Check for updates"
+>
+  <svg class="update">
+    <use xlink:href="update.svg#update"></use>
+  </svg>
+</button>
+
 <main class="container">
   <h1>Quilter</h1>
   <h3>Please select an option below.</h3>
@@ -45,6 +94,34 @@
 
   .logo.cast:hover {
     filter: drop-shadow(0 0 2em #ff3e00);
+  }
+
+  .update {
+    width: 2em;
+    height: 2em;
+  }
+
+  button.updater {
+    position: fixed;
+    bottom: 1em;
+    right: 1em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1000;
+  }
+
+  .updating {
+    animation: spin 3s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   :root {
