@@ -10,10 +10,5 @@ categories:
   - title: "🛠 Maintenance"
     labels:
       - "chore"
-change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
-template: |
-  ## What's Changed
-
-  $CHANGES
-
-  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$NEW_TAG
+change-template: "- $TITLE - @$AUTHOR (#$NUMBER)"
+template: $CHANGES
