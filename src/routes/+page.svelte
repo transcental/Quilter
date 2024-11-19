@@ -86,13 +86,6 @@
   </div>
 </main>
 
-<footer>
-  <div class="row">
-    Created by&nbsp;<a href="https://transcental.dev" target="_blank">Amber</a
-    >&nbsp;© 2024
-  </div>
-</footer>
-
 <style>
   .logo.sort-files:hover {
     filter: drop-shadow(0 0 2em #747bff);
@@ -204,11 +197,5 @@
     svg {
       fill: #f6f6f6;
     }
-  }
-
-  footer {
-    margin-top: 5em;
-    text-align: center;
-    font-size: 0.75em;
   }
 </style>
