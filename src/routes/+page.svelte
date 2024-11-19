@@ -1,11 +1,14 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
   import { ask, message } from "@tauri-apps/plugin-dialog";
   import { check } from "@tauri-apps/plugin-updater";
   import { relaunch } from "@tauri-apps/plugin-process";
 
+  let updating = $state(false);
+
   async function checkForAppUpdates(userAsked: boolean = false) {
+    updating = true;
     const update = await check();
+
     console.log(update);
     if (update === null && userAsked) {
       await message("You are on the latest version. Yay!", {
@@ -13,6 +16,7 @@
         kind: "info",
         okLabel: "OK",
       });
+      updating = false;
       return;
     } else if (update?.available) {
       const yes = await ask(
@@ -27,7 +31,11 @@
       if (yes) {
         await update.downloadAndInstall();
         await relaunch();
+      } else {
+        updating = false;
       }
+    } else {
+      updating = false;
     }
   }
 
@@ -36,11 +44,11 @@
 </script>
 
 <button
-  on:click={() => checkForAppUpdates(true)}
+  onclick={() => checkForAppUpdates(true)}
   class="updater"
   aria-label="Check for updates"
 >
-  <svg class="update">
+  <svg class={"update" + (updating ? " updating" : "")}>
     <use xlink:href="update.svg#update"></use>
   </svg>
 </button>
