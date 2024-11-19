@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
+  import { DISPLAYS, type DisplayInfo } from "../../utils";
 
   type Folder =
     | { path: string; status: "checking" | "ok"; unwantedFiles?: never }
@@ -13,7 +14,7 @@
 
   let folders: Folder[] = $state([]);
   let finalFolder: string = $state("");
-  let views: number = $state(66);
+  let views: DisplayInfo = $state(DISPLAYS[0]);
 
   const openFolderSelect = async () => {
     const result = await open({
@@ -62,13 +63,6 @@
     folders = folders.filter((f) => f.path !== folder);
   };
 
-  const validateNumberInput = (event: Event) => {
-    const input = (event.target as HTMLInputElement).value;
-    if (isNaN(parseInt(input))) {
-      (event.target as HTMLInputElement).value = "";
-    }
-  };
-
   const deleteFile = (folder: string, file: string) => {
     invoke("delete_file", { folder, filename: file }).then((res: unknown) => {
       console.log("File Deleted", res);
@@ -93,7 +87,7 @@
     invoke("sort_files", {
       frameFolders: folders.map((f) => f.path),
       finalFolder,
-      views,
+      views: views.layout[0] * views.layout[1],
     }).then((res: unknown) => {
       console.log("Files Sorted", res);
     });
@@ -214,15 +208,18 @@
       {/if}
     </div>
     <div class="column form-input">
-      <h4>Amount of Views</h4>
-      <small>How many images are there per frame</small>
-      <input
-        type="number"
-        oninput={validateNumberInput}
-        bind:value={views}
-        onchange={(e) =>
-          (views = parseInt((e.target as HTMLInputElement).value))}
-      />
+      <h4>What device?</h4>
+      <small>Which device is this Quilt being built for?</small>
+      <div class="select-wrapper">
+        <select bind:value={views}>
+          {#each DISPLAYS as display}
+            <option value={display}>{display.name}</option>
+          {/each}
+        </select>
+        <svg class="icon dropdown-icon">
+          <use xlink:href="dropdown.svg#dropdown"></use>
+        </svg>
+      </div>
     </div>
     <div class="column form-input">
       <h4>Final Frame Folder</h4>
@@ -374,13 +371,34 @@
   }
 
   button,
-  input {
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
     padding: 5px;
     margin: 5px;
     border: 1px solid #646cff;
     border-radius: 5px;
     background-color: #646cff;
     color: white;
+  }
+
+  .select-wrapper {
+    position: relative;
+    margin: 0;
+    padding: 0;
+  }
+
+  select {
+    width: 100%;
+  }
+
+  .select-wrapper svg.dropdown-icon {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    fill: #f6f6f6;
   }
 
   button {
