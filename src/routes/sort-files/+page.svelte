@@ -2,6 +2,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
   import { DISPLAYS, type DisplayInfo } from "../../utils";
+  import Dropdown from "../../components/dropdown.svelte";
 
   type Folder =
     | { path: string; status: "checking" | "ok"; unwantedFiles?: never }
@@ -12,9 +13,17 @@
     folder: string;
   };
 
+  let sortStatus: "unsorted" | "sorting" | "sorted" = $state("unsorted");
+
   let folders: Folder[] = $state([]);
   let finalFolder: string = $state("");
   let views: DisplayInfo = $state(DISPLAYS[0]);
+  let dropdownOptions = $state(
+    DISPLAYS.map((display: DisplayInfo) => ({
+      value: display,
+      display: display.name,
+    })),
+  );
 
   const openFolderSelect = async () => {
     const result = await open({
@@ -32,19 +41,16 @@
   const checkFolder = (path: string) => {
     invoke("check_folder", { path }).then((res: unknown) => {
       const filesMap = res as FilesMap;
-      console.log("Folder Checked");
       if (filesMap.files.length > 0) {
         const folder = folders.find((f) => f.path === filesMap.folder);
         if (folder) {
           folder.status = "error";
           folder.unwantedFiles = filesMap.files;
-          console.log("Folder has unwanted files", filesMap.files);
         }
       } else {
         const folder = folders.find((f) => f.path === filesMap.folder);
         if (folder) {
           folder.status = "ok";
-          console.log("Folder is good");
         }
       }
     });
@@ -65,7 +71,6 @@
 
   const deleteFile = (folder: string, file: string) => {
     invoke("delete_file", { folder, filename: file }).then((res: unknown) => {
-      console.log("File Deleted", res);
       checkFolder(folder);
     });
   };
@@ -84,18 +89,18 @@
   };
 
   const sortFiles = () => {
+    sortStatus = "sorting";
     invoke("sort_files", {
       frameFolders: folders.map((f) => f.path),
       finalFolder,
       views: views.layout[0] * views.layout[1],
     }).then((res: unknown) => {
-      console.log("Files Sorted", res);
+      sortStatus = "sorted";
     });
   };
 </script>
 
-<a href="/" class="home">
-  <!-- <img src="/home.svg" alt="Home" />  -->
+<a href="/" class="home" aria-label="Home">
   <svg>
     <use xlink:href="home.svg#home"></use>
   </svg>
@@ -123,19 +128,17 @@
               </li>
             {:else if folder.status === "ok"}
               <li class="row bg-success">
-                <!-- <img src="/check.svg" class="icon" alt="Folder Selected" /> -->
                 <svg class="icon">
                   <use xlink:href="check.svg#check"></use>
                 </svg>
                 <small>
                   <code>{folder.path}</code>
                 </small>
-                <button class="close" onclick={() => removeFolder(folder.path)}>
-                  <!-- <img
-                    src="/trash.svg"
-                    class="icon close"
-                    alt="Remove Folder"
-                  /> -->
+                <button
+                  class="close"
+                  onclick={() => removeFolder(folder.path)}
+                  aria-label="Remove folder"
+                >
                   <svg class="icon close">
                     <use xlink:href="trash.svg#trash"></use>
                   </svg>
@@ -144,7 +147,6 @@
             {:else if folder.status === "error"}
               <li class="bg-error">
                 <div class="row">
-                  <!-- <img src="/cancel.svg" class="icon" alt="Folder Selected" /> -->
                   <svg class="icon">
                     <use xlink:href="cancel.svg#cancel"></use>
                   </svg>
@@ -154,12 +156,8 @@
                   <button
                     class="close"
                     onclick={() => removeFolder(folder.path)}
+                    aria-label="Delete all unwanted items in folder"
                   >
-                    <!-- <img
-                      src="/trash.svg"
-                      class="icon close"
-                      alt="Remove Folder"
-                    /> -->
                     <svg class="icon close">
                       <use xlink:href="trash.svg#trash"></use>
                     </svg>
@@ -187,12 +185,8 @@
                         <button
                           class="close"
                           onclick={() => deleteFile(folder.path, file)}
+                          aria-label="Delete file"
                         >
-                          <!-- <img
-                            src="/trash.svg"
-                            class="icon"
-                            alt="Remove File"
-                          /> -->
                           <svg class="icon">
                             <use xlink:href="trash.svg#trash"></use>
                           </svg>
@@ -209,17 +203,7 @@
     </div>
     <div class="column form-input">
       <h4>What device?</h4>
-      <small>Which device is this Quilt being built for?</small>
-      <div class="select-wrapper">
-        <select bind:value={views}>
-          {#each DISPLAYS as display}
-            <option value={display}>{display.name}</option>
-          {/each}
-        </select>
-        <svg class="icon dropdown-icon">
-          <use xlink:href="dropdown.svg#dropdown"></use>
-        </svg>
-      </div>
+      <Dropdown bind:options={dropdownOptions} bind:selected={views} />
     </div>
     <div class="column form-input">
       <h4>Final Frame Folder</h4>
@@ -234,19 +218,30 @@
     <div class="column form-input">
       <button
         type="submit"
-        class={folders.length === 0 ||
-        folders.some((folder) => folder.status !== "ok") ||
-        !finalFolder ||
-        !views
-          ? "disabled"
-          : ""}
+        class={`row ${
+          folders.length === 0 ||
+          folders.some((folder) => folder.status !== "ok") ||
+          !finalFolder ||
+          !views ||
+          sortStatus !== "unsorted"
+            ? "disabled"
+            : ""
+        }`}
         disabled={folders.length === 0 ||
           folders.some((folder) => folder.status !== "ok") ||
           !finalFolder ||
-          !views}
+          !views ||
+          sortStatus !== "unsorted"}
         onclick={sortFiles}
       >
-        <strong>Sort Files</strong>
+        {#if sortStatus === "unsorted"}
+          <strong>Sort Files</strong>
+        {:else if sortStatus === "sorting"}
+          <div class="loader"></div>
+          <strong>Sorting Files</strong>
+        {:else if sortStatus === "sorted"}
+          <strong>Files Sorted</strong>
+        {/if}
       </button>
     </div>
   </div>
@@ -298,7 +293,7 @@
     border-radius: 50%;
     padding: 3px;
     background:
-      radial-gradient(farthest-side, gray 95%, #0000) 50% 0/25px 25px no-repeat,
+      radial-gradient(farthest-side, gray 95%, #0000) 50% 0/12px 12px no-repeat,
       radial-gradient(
           farthest-side,
           #0000 calc(100% - 5px),
@@ -370,8 +365,7 @@
     background-color: #00ff0040;
   }
 
-  button,
-  select {
+  button {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
@@ -381,24 +375,6 @@
     border-radius: 5px;
     background-color: #646cff;
     color: white;
-  }
-
-  .select-wrapper {
-    position: relative;
-    margin: 0;
-    padding: 0;
-  }
-
-  select {
-    width: 100%;
-  }
-
-  .select-wrapper svg.dropdown-icon {
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-    fill: #f6f6f6;
   }
 
   button {
