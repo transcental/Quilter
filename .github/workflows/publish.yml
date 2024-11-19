@@ -71,6 +71,7 @@ jobs:
           tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: "Quilter v__VERSION__"
           releaseBody: ${{ steps.release_drafter.outputs.body }}
+          releaseId: ${{ steps.release_drafter.outputs.id }}
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
