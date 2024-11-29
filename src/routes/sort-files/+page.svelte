@@ -3,6 +3,7 @@
   import { open } from "@tauri-apps/plugin-dialog";
   import { DISPLAYS, type DisplayInfo } from "../../utils";
   import Dropdown from "../../components/dropdown.svelte";
+  import FolderInput from "../../components/folderInput.svelte";
 
   type Folder =
     | { path: string; status: "checking" | "ok"; unwantedFiles?: never }
@@ -25,17 +26,12 @@
     })),
   );
 
-  const openFolderSelect = async () => {
-    const result = await open({
-      directory: true,
+  const frameFolderCallback = async (result: string) => {
+    folders.push({
+      path: result,
+      status: "checking",
     });
-    if (result) {
-      folders.push({
-        path: result,
-        status: "checking",
-      });
-      checkFolder(result);
-    }
+    checkFolder(result);
   };
 
   const checkFolder = (path: string) => {
@@ -56,13 +52,8 @@
     });
   };
 
-  const openFinalFolderSelect = async () => {
-    const result = await open({
-      directory: true,
-    });
-    if (result) {
-      finalFolder = result;
-    }
+  const finalFolderCallback = async (result: string) => {
+    finalFolder = result;
   };
 
   const removeFolder = (folder: string) => {
@@ -113,9 +104,7 @@
       <small
         >These should be selected in the order you want the animation built in</small
       >
-      <button onclick={openFolderSelect} id="folders" name="folders"
-        >Select Folder</button
-      >
+      <FolderInput callback={frameFolderCallback}>Select Folder</FolderInput>
       {#if folders.length > 0}
         <ul>
           {#each folders as folder (folder)}
@@ -208,9 +197,7 @@
     <div class="column form-input">
       <h4>Final Frame Folder</h4>
       <small>Where should the final frame sequence be saved</small>
-      <button onclick={openFinalFolderSelect} id="final" name="final"
-        >Select Folder</button
-      >
+      <FolderInput callback={finalFolderCallback}>Select Folder</FolderInput>
       {#if finalFolder}
         <small><code>{finalFolder}</code></small>
       {/if}
