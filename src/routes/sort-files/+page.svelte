@@ -1,6 +1,5 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { open } from "@tauri-apps/plugin-dialog";
   import { DISPLAYS, type DisplayInfo } from "../../utils";
   import Dropdown from "../../components/dropdown.svelte";
   import FolderInput from "../../components/folderInput.svelte";
