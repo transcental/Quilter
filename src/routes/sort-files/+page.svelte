@@ -3,6 +3,7 @@
   import { DISPLAYS, type DisplayInfo } from "../../utils";
   import Dropdown from "../../components/dropdown.svelte";
   import FolderInput from "../../components/folderInput.svelte";
+  import Button from "../../components/button.svelte";
 
   type Folder =
     | { path: string; status: "checking" | "ok"; unwantedFiles?: never }
@@ -122,15 +123,15 @@
                 <small>
                   <code>{folder.path}</code>
                 </small>
-                <button
-                  class="close"
-                  onclick={() => removeFolder(folder.path)}
-                  aria-label="Remove folder"
+                <Button
+                  close
+                  onClick={() => removeFolder(folder.path)}
+                  ariaLabel="Remove folder"
                 >
                   <svg class="icon close">
                     <use xlink:href="trash.svg#trash"></use>
                   </svg>
-                </button>
+                </Button>
               </li>
             {:else if folder.status === "error"}
               <li class="bg-error">
@@ -141,44 +142,46 @@
                   <small>
                     <code>{folder.path}</code>
                   </small>
-                  <button
-                    class="close"
-                    onclick={() => removeFolder(folder.path)}
-                    aria-label="Delete all unwanted items in folder"
+                  <Button
+                    close
+                    onClick={() => removeFolder(folder.path)}
+                    ariaLabel="Delete all unwanted items in folder"
                   >
                     <svg class="icon close">
                       <use xlink:href="trash.svg#trash"></use>
                     </svg>
-                  </button>
+                  </Button>
                 </div>
                 <div class="column">
                   <div class="row">
                     <small>These files need to be deleted first</small>
-                    <button
-                      onclick={() =>
+                    <Button
+                      ariaLabel="Move all unwanted files"
+                      onClick={() =>
                         deleteOrMoveAllUnwantedFiles(folder, false)}
                     >
                       Move All
-                    </button>
-                    <button
-                      onclick={() => deleteOrMoveAllUnwantedFiles(folder, true)}
+                    </Button>
+                    <Button
+                      ariaLabel="Delete all unwanted files"
+                      onClick={() => deleteOrMoveAllUnwantedFiles(folder, true)}
                     >
                       Delete All
-                    </button>
+                    </Button>
                   </div>
                   <ul>
                     {#each folder.unwantedFiles as file (file)}
                       <li class="elevated row">
                         <small><code>{file}</code></small>
-                        <button
-                          class="close"
-                          onclick={() => deleteFile(folder.path, file)}
-                          aria-label="Delete file"
+                        <Button
+                          close
+                          onClick={() => deleteFile(folder.path, file)}
+                          ariaLabel="Delete file"
                         >
                           <svg class="icon">
                             <use xlink:href="trash.svg#trash"></use>
                           </svg>
-                        </button>
+                        </Button>
                       </li>
                     {/each}
                   </ul>
@@ -202,23 +205,15 @@
       {/if}
     </div>
     <div class="column form-input">
-      <button
+      <Button
         type="submit"
-        class={`row ${
-          folders.length === 0 ||
-          folders.some((folder) => folder.status !== "ok") ||
-          !finalFolder ||
-          !views ||
-          sortStatus !== "unsorted"
-            ? "disabled"
-            : ""
-        }`}
         disabled={folders.length === 0 ||
           folders.some((folder) => folder.status !== "ok") ||
           !finalFolder ||
           !views ||
           sortStatus !== "unsorted"}
-        onclick={sortFiles}
+        onClick={sortFiles}
+        ariaLabel="Sort Files"
       >
         {#if sortStatus === "unsorted"}
           <strong>Sort Files</strong>
@@ -228,7 +223,7 @@
         {:else if sortStatus === "sorted"}
           <strong>Files Sorted</strong>
         {/if}
-      </button>
+      </Button>
     </div>
   </div>
 </main>
@@ -349,33 +344,6 @@
 
   .bg-success {
     background-color: #00ff0040;
-  }
-
-  button {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    padding: 5px;
-    margin: 5px;
-    border: 1px solid #646cff;
-    border-radius: 5px;
-    background-color: #646cff;
-    color: white;
-  }
-
-  button {
-    cursor: pointer;
-  }
-
-  button.disabled {
-    background-color: #646cff40;
-    color: #646cff80;
-    cursor: not-allowed;
-  }
-
-  button.close {
-    background-color: #ff3e00;
-    border-color: #ff3e00;
   }
 
   .icon.close {
