@@ -3,8 +3,10 @@
     value: any;
     display: string;
   };
-  export let options: Option[] = [];
-  export let selected: any;
+  let {
+    options = $bindable(),
+    selected = $bindable(),
+  }: { options: Option[]; selected: any } = $props();
 </script>
 
 <div class="select-wrapper">
