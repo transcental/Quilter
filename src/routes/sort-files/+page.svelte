@@ -27,10 +27,13 @@
   );
 
   const frameFolderCallback = async (result: string) => {
-    folders.push({
-      path: result,
-      status: "checking",
-    });
+    folders = [
+      ...folders,
+      {
+        path: result,
+        status: "checking",
+      },
+    ];
     checkFolder(result);
   };
 

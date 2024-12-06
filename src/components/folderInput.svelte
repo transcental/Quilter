@@ -10,12 +10,20 @@
       callback(result);
     }
   };
-  export let multiple: boolean = false;
-  export let callback: (path: string) => void;
+
+  let {
+    multiple = false,
+    callback,
+    children,
+  }: {
+    multiple?: boolean;
+    callback: (path: string) => void;
+    children: any;
+  } = $props();
 </script>
 
-<button on:click={openFolder}>
-  <slot></slot>
+<button onclick={openFolder}>
+  {@render children?.()}
 </button>
 
 <style>

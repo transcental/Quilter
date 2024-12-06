@@ -40,13 +40,17 @@
           unwantedFiles: filesMap.files,
         };
       } else {
-        sortedFolder.status = "ok";
+        sortedFolder = {
+          ...sortedFolder,
+          status: "ok",
+          unwantedFiles: undefined,
+        };
       }
     });
   };
 
   const sortedFolderCallback = async (result: string) => {
-    sortedFolder.path = result;
+    sortedFolder = { path: result, status: "checking" };
     checkFolder(result);
   };
 
