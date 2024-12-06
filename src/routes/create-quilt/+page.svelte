@@ -1,13 +1,201 @@
+<script lang="ts">
+  import { invoke } from "@tauri-apps/api/core";
+  import { DISPLAYS, type DisplayInfo } from "../../utils";
+  import Dropdown from "../../components/dropdown.svelte";
+  import FolderInput from "../../components/folderInput.svelte";
+  import Button from "../../components/button.svelte";
+
+  type Folder =
+    | { path: string; status: "checking" | "ok"; unwantedFiles?: never }
+    | { path: string; status: "error"; unwantedFiles: string[] };
+
+  type FilesMap = {
+    files: string[];
+    folder: string;
+  };
+
+  let quiltStatus: "unstarted" | "making" | "made" = $state("unstarted");
+
+  let sortedFolder: Folder = $state({
+    path: "",
+    status: "checking",
+  });
+  let quiltFolder: string = $state("");
+
+  let views: DisplayInfo = $state(DISPLAYS[0]);
+  let dropdownOptions = $state(
+    DISPLAYS.map((display: DisplayInfo) => ({
+      value: display,
+      display: display.name,
+    })),
+  );
+
+  const checkFolder = (path: string) => {
+    invoke("check_folder", { path }).then((res: unknown) => {
+      const filesMap = res as FilesMap;
+      if (filesMap.files.length > 0) {
+        sortedFolder = {
+          status: "error",
+          path: filesMap.folder,
+          unwantedFiles: filesMap.files,
+        };
+      } else {
+        sortedFolder.status = "ok";
+      }
+    });
+  };
+
+  const sortedFolderCallback = async (result: string) => {
+    sortedFolder.path = result;
+    checkFolder(result);
+  };
+
+  const quiltFolderCallback = async (result: string) => {
+    quiltFolder = result;
+  };
+
+  const deleteFile = (folder: string, file: string) => {
+    invoke("delete_file", { folder, filename: file }).then((res: unknown) => {
+      checkFolder(folder);
+    });
+  };
+
+  const deleteOrMoveAllUnwantedFiles = (
+    folder: Folder,
+    shouldDelete: boolean,
+  ) => {
+    invoke("delete_move_files_in_folder", {
+      folder: folder.path,
+      files: folder.unwantedFiles,
+      delete: shouldDelete,
+    }).then((res: unknown) => {
+      checkFolder(folder.path);
+    });
+  };
+
+  const makeQuilt = () => {
+    quiltStatus = "making";
+    invoke("make_quilt", {
+      sortedFolder: sortedFolder.path,
+      outputFolder: quiltFolder,
+      columns: views.layout[0],
+      rows: views.layout[1],
+    }).then((res: unknown) => {
+      quiltStatus = "made";
+    });
+  };
+</script>
+
+<a href="/" class="home" aria-label="Home">
+  <svg>
+    <use xlink:href="home.svg#home"></use>
+  </svg>
+</a>
 <main class="container">
   <h1>Create Quilt</h1>
-  <p>This page is not implemented yet</p>
-  <div class="row">
-    <a href="/">
-      <svg class="logo home">
-        <use xlink:href="home.svg#home"></use>
-      </svg>
-      <h4>Go Home</h4>
-    </a>
+  <div class="column">
+    <div class="column form-input">
+      <h4>Sorted Folder</h4>
+      <small>
+        This should be the sorted folder that has all your frames in that you
+        want combining into quilts.
+      </small>
+      <FolderInput callback={sortedFolderCallback}>Select Folder</FolderInput>
+      {#if sortedFolder.status === "checking"}
+        <li class="row">
+          <div class="loader"></div>
+          <small>
+            <code>{sortedFolder.path}</code>
+          </small>
+        </li>
+      {:else if sortedFolder.status === "ok"}
+        <li class="row bg-success">
+          <svg class="icon">
+            <use xlink:href="check.svg#check"></use>
+          </svg>
+          <small>
+            <code>{sortedFolder.path}</code>
+          </small>
+        </li>
+      {:else if sortedFolder.status === "error"}
+        <li class="bg-error">
+          <div class="row">
+            <svg class="icon">
+              <use xlink:href="cancel.svg#cancel"></use>
+            </svg>
+            <small>
+              <code>{sortedFolder.path}</code>
+            </small>
+          </div>
+          <div class="column">
+            <small>These files need to be deleted first</small>
+            <div class="row">
+              <Button
+                ariaLabel="Move all unwanted files"
+                onClick={() =>
+                  deleteOrMoveAllUnwantedFiles(sortedFolder, false)}
+              >
+                Move All
+              </Button>
+              <Button
+                ariaLabel="Delete all unwanted files"
+                onClick={() => deleteOrMoveAllUnwantedFiles(sortedFolder, true)}
+              >
+                Delete All
+              </Button>
+            </div>
+            <ul>
+              {#each sortedFolder.unwantedFiles as file (file)}
+                <li class="elevated row">
+                  <small><code>{file}</code></small>
+                  <Button
+                    close
+                    onClick={() => deleteFile(sortedFolder.path, file)}
+                    ariaLabel="Delete file"
+                  >
+                    <svg class="icon">
+                      <use xlink:href="trash.svg#trash"></use>
+                    </svg>
+                  </Button>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        </li>
+      {/if}
+    </div>
+    <div class="column form-input">
+      <h4>What device?</h4>
+      <Dropdown bind:options={dropdownOptions} bind:selected={views} />
+    </div>
+    <div class="column form-input">
+      <h4>Quilt Folder</h4>
+      <small>Where should the final quilt(s) be saved</small>
+      <FolderInput callback={quiltFolderCallback}>Select Folder</FolderInput>
+      {#if quiltFolder}
+        <small><code>{quiltFolder}</code></small>
+      {/if}
+    </div>
+    <div class="column form-input">
+      <Button
+        type="submit"
+        disabled={sortedFolder.status !== "ok" ||
+          !quiltFolder ||
+          !views ||
+          quiltStatus !== "unstarted"}
+        onClick={makeQuilt}
+        ariaLabel="Sort Files"
+      >
+        {#if quiltStatus === "unstarted"}
+          <strong>Sort Files</strong>
+        {:else if quiltStatus === "making"}
+          <div class="loader"></div>
+          <strong>Sorting Files</strong>
+        {:else if quiltStatus === "made"}
+          <strong>Files Sorted</strong>
+        {/if}
+      </Button>
+    </div>
   </div>
 </main>
 
@@ -28,42 +216,121 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  .home svg {
+    width: 25px;
+    aspect-ratio: 1;
+    height: 25px;
+    position: fixed;
+  }
+
   .container {
     margin: 0;
     padding-top: 10vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    text-align: center;
+    padding: 10vw;
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+    flex: 50%;
+    padding: 10px;
+  }
+
+  .loader {
+    width: 25px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    padding: 3px;
+    background:
+      radial-gradient(farthest-side, gray 95%, #0000) 50% 0/12px 12px no-repeat,
+      radial-gradient(
+          farthest-side,
+          #0000 calc(100% - 5px),
+          gray calc(100% - 4px)
+        )
+        content-box;
+    animation: l6 2s infinite;
+  }
+
+  @keyframes l6 {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .column.form-input {
+    gap: 5px;
+    h4 {
+      margin: 0;
+    }
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  li {
+    border: 1px solid #646cff;
+    border-radius: 5px;
+    margin: 5px 0;
+    overflow: scroll;
+  }
+
+  li svg {
+    width: 25px;
+    height: 25px;
   }
 
   .row {
     display: flex;
     justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 5px;
   }
 
-  a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
+  .bg-error {
+    background-color: #ff400040;
+    /* icon should be at the right */
   }
 
-  a:hover {
-    color: #535bf2;
+  .bg-error .elevated {
+    background-color: #ff400040;
+    color: white;
+    padding: 0px;
+    margin: 5px;
+    border-radius: 5px;
+    justify-content: space-between;
+  }
+
+  small {
+    font-size: 0.8em;
+    margin: 5px;
+  }
+
+  .bg-success {
+    background-color: #00ff0040;
   }
 
   h1 {
     text-align: center;
   }
 
+  svg {
+    fill: #0f0f0f;
+    width: 16px;
+    height: 16px;
+  }
+
   @media (prefers-color-scheme: dark) {
     :root {
       color: #f6f6f6;
       background-color: #2f2f2f;
-    }
-
-    a:hover {
-      color: #24c8db;
     }
 
     svg {
