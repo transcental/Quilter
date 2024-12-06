@@ -14,7 +14,8 @@ pub fn run() {
             commands::delete_file,
             commands::move_file,
             commands::delete_move_files_in_folder,
-            commands::sort_files
+            commands::sort_files,
+            commands::make_quilt
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
