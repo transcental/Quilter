@@ -1,13 +1,23 @@
 <script lang="ts">
-  export let disabled: boolean = false;
-  export let onClick: () => void;
-  export let type: "button" | "submit" | "reset" = "button";
-  export let ariaLabel: string;
-  export let close: boolean = false;
+  let {
+    disabled = false,
+    onClick,
+    type,
+    ariaLabel,
+    close = false,
+    children,
+  }: {
+    disabled?: boolean;
+    onClick: () => void;
+    type?: "button" | "submit" | "reset";
+    ariaLabel: string;
+    close?: boolean;
+    children: any;
+  } = $props();
 </script>
 
 <button {type} {disabled} aria-label={ariaLabel} onclick={onClick} class:close>
-  <slot></slot>
+  {@render children?.()}
 </button>
 
 <style>
