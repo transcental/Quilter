@@ -1,14 +1,10 @@
 use image::{GenericImageView, ImageBuffer};
-use serde::Serialize;
 use std::{fs, path::Path};
+use tauri::{AppHandle, Emitter};
 
-#[derive(Serialize)]
-pub struct FilesMap {
-    files: Vec<String>,
-    folder: String,
-}
+use crate::{FilesMap, QuiltStatus, QuiltStatusState};
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn check_folder(path: String) -> FilesMap {
     let files = fs::read_dir(path.clone()).unwrap();
     let mut unwanted_files: Vec<String> = vec![];
@@ -29,14 +25,14 @@ pub fn check_folder(path: String) -> FilesMap {
     files_map.into()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_file(folder: &str, filename: String) {
     let path = std::path::Path::new(folder).join(&filename);
     let path = path.to_str().unwrap();
     fs::remove_file(path).unwrap();
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn move_file(folder: &str, filename: String, destination: &str) {
     let path = std::path::Path::new(folder).join(&filename);
     let path = path.to_str().unwrap();
@@ -45,7 +41,7 @@ pub fn move_file(folder: &str, filename: String, destination: &str) {
     fs::rename(path, destination).unwrap();
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_move_files_in_folder(folder: String, files: Vec<String>, delete: bool) {
     if !delete {
         let parent_folder = std::path::Path::new(&folder).parent().unwrap();
@@ -62,7 +58,7 @@ pub fn delete_move_files_in_folder(folder: String, files: Vec<String>, delete: b
     }
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn sort_files(frame_folders: Vec<String>, final_folder: String, views: usize) {
     println!("Folders: {:?}", frame_folders);
     let no_of_folders: usize = frame_folders.len();
@@ -97,8 +93,14 @@ pub fn sort_files(frame_folders: Vec<String>, final_folder: String, views: usize
     }
 }
 
-#[tauri::command]
-pub fn make_quilt(sorted_folder: String, output_folder: String, columns: usize, rows: usize) {
+#[tauri::command(async)]
+pub fn make_quilt(
+    app: AppHandle,
+    sorted_folder: String,
+    output_folder: String,
+    columns: usize,
+    rows: usize,
+) {
     let quilt_size = columns * rows;
 
     let mut quilt_layout: Vec<Vec<String>> = vec![vec!['-'.to_string(); columns]; rows];
@@ -111,6 +113,16 @@ pub fn make_quilt(sorted_folder: String, output_folder: String, columns: usize, 
         .collect();
     dir.sort_by(|a, b| a.file_name().unwrap().cmp(b.file_name().unwrap()));
     let no_of_quilts = dir.len() / quilt_size;
+
+    app.emit(
+        "quilt_status",
+        QuiltStatus {
+            amount: no_of_quilts,
+            index: 0,
+            status: QuiltStatusState::InProgress,
+        },
+    )
+    .unwrap();
 
     for quilt_i in 0..no_of_quilts {
         for i in 0..quilt_size {
@@ -165,5 +177,23 @@ pub fn make_quilt(sorted_folder: String, output_folder: String, columns: usize, 
         // flip the quilt vertically
         let quilt = image::imageops::flip_vertical(&quilt);
         quilt.save(&output_path).unwrap();
+        app.emit(
+            "quilt_status",
+            QuiltStatus {
+                amount: no_of_quilts,
+                index: quilt_i + 1,
+                status: QuiltStatusState::InProgress,
+            },
+        )
+        .unwrap();
     }
+    app.emit(
+        "quilt_status",
+        QuiltStatus {
+            amount: no_of_quilts,
+            index: no_of_quilts,
+            status: QuiltStatusState::Finished,
+        },
+    )
+    .unwrap();
 }
