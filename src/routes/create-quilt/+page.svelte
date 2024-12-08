@@ -1,12 +1,17 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { listen } from "@tauri-apps/api/event";
   import { DISPLAYS, type DisplayInfo } from "../../utils";
   import Dropdown from "../../components/dropdown.svelte";
   import FolderInput from "../../components/folderInput.svelte";
   import Button from "../../components/button.svelte";
 
   type Folder =
-    | { path: string; status: "checking" | "ok"; unwantedFiles?: never }
+    | {
+        path: string;
+        status: "empty" | "checking" | "ok";
+        unwantedFiles?: never;
+      }
     | { path: string; status: "error"; unwantedFiles: string[] };
 
   type FilesMap = {
@@ -14,12 +19,25 @@
     folder: string;
   };
 
-  let quiltStatus: "unstarted" | "making" | "made" = $state("unstarted");
+  type QuiltStatusState = "NotStarted" | "InProgress" | "Finished";
+
+  type QuiltStatus = {
+    status: QuiltStatusState;
+    amount: number;
+    index: number;
+  };
+
+  let quiltStatus: QuiltStatus = $state({
+    status: "NotStarted",
+    amount: 0,
+    index: 0,
+  });
 
   let sortedFolder: Folder = $state({
     path: "",
-    status: "checking",
+    status: "empty",
   });
+
   let quiltFolder: string = $state("");
 
   let views: DisplayInfo = $state(DISPLAYS[0]);
@@ -78,16 +96,17 @@
   };
 
   const makeQuilt = () => {
-    quiltStatus = "making";
     invoke("make_quilt", {
       sortedFolder: sortedFolder.path,
       outputFolder: quiltFolder,
       columns: views.layout[0],
       rows: views.layout[1],
-    }).then((res: unknown) => {
-      quiltStatus = "made";
     });
   };
+
+  listen<QuiltStatus>("quilt_status", (event) => {
+    quiltStatus = event.payload;
+  });
 </script>
 
 <a href="/" class="home" aria-label="Home">
@@ -186,17 +205,19 @@
         disabled={sortedFolder.status !== "ok" ||
           !quiltFolder ||
           !views ||
-          quiltStatus !== "unstarted"}
+          quiltStatus.status !== "NotStarted"}
         onClick={makeQuilt}
-        ariaLabel="Sort Files"
+        ariaLabel="Create Quilts"
       >
-        {#if quiltStatus === "unstarted"}
-          <strong>Sort Files</strong>
-        {:else if quiltStatus === "making"}
+        {#if quiltStatus.status === "NotStarted"}
+          <strong>Create Quilts</strong>
+        {:else if quiltStatus.status === "InProgress"}
           <div class="loader"></div>
-          <strong>Sorting Files</strong>
-        {:else if quiltStatus === "made"}
-          <strong>Files Sorted</strong>
+          <strong
+            >Creating Quilts ({quiltStatus.index}/{quiltStatus.amount})</strong
+          >
+        {:else if quiltStatus.status === "Finished"}
+          <strong>Quilts Created</strong>
         {/if}
       </Button>
     </div>

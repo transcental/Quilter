@@ -1,5 +1,26 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod commands;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct FilesMap {
+    files: Vec<String>,
+    folder: String,
+}
+
+#[derive(Clone, Serialize)]
+enum QuiltStatusState {
+    InProgress,
+    Finished,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct QuiltStatus {
+    amount: usize,
+    index: usize,
+    status: QuiltStatusState,
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
