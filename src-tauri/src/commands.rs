@@ -1,5 +1,5 @@
 use image::{GenericImageView, ImageBuffer};
-use std::{fs, path::Path};
+use std::{fs, path::Path, thread::current};
 use tauri::{AppHandle, Emitter};
 
 use crate::{FilesMap, QuiltStatus, QuiltStatusState};
@@ -98,12 +98,13 @@ pub fn make_quilt(
     app: AppHandle,
     sorted_folder: String,
     output_folder: String,
-    columns: usize,
-    rows: usize,
+    columns: isize,
+    rows: isize,
 ) {
     let quilt_size = columns * rows;
 
-    let mut quilt_layout: Vec<Vec<String>> = vec![vec!['-'.to_string(); columns]; rows];
+    let mut quilt_layout: Vec<Vec<String>> =
+        vec![vec!['-'.to_string(); columns as usize]; rows as usize];
     let mut current_row = 0;
     let mut current_column = 0;
 
@@ -112,7 +113,7 @@ pub fn make_quilt(
         .map(|entry| entry.unwrap().path())
         .collect();
     dir.sort_by(|a, b| a.file_name().unwrap().cmp(b.file_name().unwrap()));
-    let no_of_quilts = dir.len() / quilt_size;
+    let no_of_quilts = dir.len() as isize / quilt_size;
 
     app.emit(
         "quilt_status",
@@ -126,9 +127,12 @@ pub fn make_quilt(
 
     for quilt_i in 0..no_of_quilts {
         for i in 0..quilt_size {
-            let filename = dir[i + quilt_size * quilt_i].to_str().unwrap().to_string();
+            let filename = dir[(i + quilt_size * quilt_i) as usize]
+                .to_str()
+                .unwrap()
+                .to_string();
             if filename.contains("_v") {
-                quilt_layout[current_row][current_column] = filename;
+                quilt_layout[current_row as usize][current_column as usize] = filename;
                 current_column += 1;
                 if current_column == columns {
                     current_column = 0;
@@ -143,7 +147,6 @@ pub fn make_quilt(
         let first_img_path = &quilt_layout[0][0];
         let first_img = image::open(first_img_path).unwrap();
         let (img_width, img_height) = first_img.dimensions();
-
         let quilt_width = img_width * columns as u32;
         let quilt_height = img_height * rows as u32;
 
@@ -153,7 +156,7 @@ pub fn make_quilt(
         for row in 0..rows {
             current_width = 0;
             for column in 0..columns {
-                let current_img_path = &quilt_layout[row][column];
+                let current_img_path = &quilt_layout[row as usize][column as usize];
                 let current_img = image::open(current_img_path).unwrap();
                 let current_img_map = current_img.to_rgba8();
 
@@ -162,14 +165,14 @@ pub fn make_quilt(
                         let pixel = current_img_map.get_pixel(x, y);
                         quilt.put_pixel(
                             current_width + x,
-                            quilt_height - 1 - (current_height + y),
+                            (quilt_height - 1) - (current_height + y),
                             *pixel,
                         );
                     }
                 }
-                current_width += img_width;
+                current_width = img_width * <isize as TryInto<u32>>::try_into(column + 1).unwrap();
             }
-            current_height += img_height;
+            current_height = img_height * <isize as TryInto<u32>>::try_into(row + 1).unwrap();
         }
 
         let output_path =
@@ -177,6 +180,7 @@ pub fn make_quilt(
         // flip the quilt vertically
         let quilt = image::imageops::flip_vertical(&quilt);
         quilt.save(&output_path).unwrap();
+        println!("Saved {:?}", &output_path);
         app.emit(
             "quilt_status",
             QuiltStatus {
