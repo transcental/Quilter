@@ -7,7 +7,24 @@ on:
       - release
 
 jobs:
-  publish-tauri:
+  create_release:
+    permissions:
+      contents: write
+    runs-on: "ubuntu-22.04"
+    outputs:
+      body: ${{steps.release_drafter.outputs.body}}
+      id: ${{steps.release_drafter.outputs.ids}}
+    steps:
+      - name: Draft Release Notes
+        id: release_drafter
+        uses: release-drafter/release-drafter@v5
+        with:
+          config-name: release-drafter.yml
+          publish: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  publish_tauri:
+    needs: [create_release]
     permissions:
       contents: write
     strategy:
@@ -53,14 +70,6 @@ jobs:
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
         run: bun install
 
-      - name: Draft Release Notes
-        id: release_drafter
-        uses: release-drafter/release-drafter@v5
-        with:
-          config-name: release-drafter.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: build tauri app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -70,8 +79,8 @@ jobs:
         with:
           tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: "Quilter v__VERSION__"
-          releaseBody: ${{ steps.release_drafter.outputs.body }}
-          releaseId: ${{ steps.release_drafter.outputs.id }}
+          releaseBody: ${{ needs.create_release.outputs.body }}
+          releaseId: ${{ needs.create_release.outputs.id }}
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
