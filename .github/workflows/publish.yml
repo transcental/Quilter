@@ -10,7 +10,7 @@ jobs:
   create_release:
     permissions:
       contents: write
-    runs-on: 'ubuntu-22.04'
+    runs-on: "ubuntu-22.04"
     outputs:
       body: ${{steps.release_drafter.outputs.body}}
       id: ${{steps.release_drafter.outputs.ids}}
