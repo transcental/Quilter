@@ -17,8 +17,8 @@ enum QuiltStatusState {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct QuiltStatus {
-    amount: usize,
-    index: usize,
+    amount: isize,
+    index: isize,
     status: QuiltStatusState,
 }
 
