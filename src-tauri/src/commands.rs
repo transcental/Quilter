@@ -1,5 +1,5 @@
 use image::{GenericImageView, ImageBuffer};
-use std::{fs, path::Path, thread::current};
+use std::{fs, path::Path};
 use tauri::{AppHandle, Emitter};
 
 use crate::{FilesMap, QuiltStatus, QuiltStatusState};
