@@ -12,6 +12,8 @@ pub struct FilesMap {
 enum QuiltStatusState {
     InProgress,
     Finished,
+    CreatingAnimation,
+    CreatedAnimation,
 }
 
 #[derive(Clone, Serialize)]

@@ -16,6 +16,30 @@
     "updater:allow-download-and-install",
     "process:allow-restart",
     "process:default",
-    "shell:default"
+    "shell:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": [
+            "-framerate",
+            {
+              "validator": "\\d+"
+            },
+            "-i",
+            {
+              "validator": "\\S+"
+            },
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            {
+              "validator": "\\S+"
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
