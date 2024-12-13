@@ -37,7 +37,9 @@
             {
               "validator": "\\S+"
             }
-          ]
+          ],
+          "name": "binaries/ffmpeg",
+          "sidecar": true
         }
       ]
     }
