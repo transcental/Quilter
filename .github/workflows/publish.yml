@@ -70,6 +70,10 @@ jobs:
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
         run: bun install
 
+      - name: download ffmpeg
+        # Use bun to download the ffmpeg sidecar before building so the binary is available
+        run: bun run download-ffmpeg
+
       - name: build tauri app
         uses: tauri-apps/tauri-action@v0
         env:

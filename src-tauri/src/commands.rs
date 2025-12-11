@@ -213,12 +213,12 @@ pub fn make_quilt(
             },
         )
         .unwrap();
-        let framerate: &str = &framerate.to_string();
-        let input_path = std::path::Path::new(&output_folder).join("%d.png");
+        let framerate_str = framerate.to_string();
+        let input_path = std::path::Path::new(&output_folder).join("quilt_%d.png");
         let output_path = std::path::Path::new(&output_folder).join("animation.mp4");
         let sidebar_command = app.shell().sidecar("ffmpeg").unwrap().args([
             "-framerate",
-            framerate,
+            framerate_str.as_str(),
             "-i",
             input_path.to_str().unwrap(),
             "-c:v",

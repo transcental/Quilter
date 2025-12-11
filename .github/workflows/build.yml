@@ -38,6 +38,10 @@ jobs:
         with:
           bun-version: latest
 
+      - name: download ffmpeg
+        # Use bun to download the ffmpeg sidecar before building so the binary is available
+        run: bun run download-ffmpeg
+
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
