@@ -1,6 +1,7 @@
 use image::{GenericImageView, ImageBuffer};
 use std::{fs, path::Path};
 use tauri::{AppHandle, Emitter};
+use tauri_plugin_shell::ShellExt;
 
 use crate::{FilesMap, QuiltStatus, QuiltStatusState};
 
@@ -100,6 +101,7 @@ pub fn make_quilt(
     output_folder: String,
     columns: isize,
     rows: isize,
+    framerate: isize,
 ) {
     let quilt_size = columns * rows;
 
@@ -200,4 +202,41 @@ pub fn make_quilt(
         },
     )
     .unwrap();
+
+    if framerate > 0 {
+        app.emit(
+            "quilt_status",
+            QuiltStatus {
+                amount: no_of_quilts,
+                index: no_of_quilts,
+                status: QuiltStatusState::CreatingAnimation,
+            },
+        )
+        .unwrap();
+        let framerate_str = framerate.to_string();
+        let input_path = std::path::Path::new(&output_folder).join("quilt_%d.png");
+        let output_path = std::path::Path::new(&output_folder).join("animation.mp4");
+        let sidebar_command = app.shell().sidecar("ffmpeg").unwrap().args([
+            "-framerate",
+            framerate_str.as_str(),
+            "-i",
+            input_path.to_str().unwrap(),
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            output_path.to_str().unwrap(),
+        ]);
+        let _ = sidebar_command.spawn().unwrap();
+        app.emit(
+            "quilt_status",
+            QuiltStatus {
+                amount: no_of_quilts,
+                index: no_of_quilts,
+                status: QuiltStatusState::CreatedAnimation,
+            },
+        )
+        .unwrap();
+    }
+    // ffmpeg -framerate 24 -i %d.png -c:v libx264 -pix_fmt yuv420p animation.mp4
 }

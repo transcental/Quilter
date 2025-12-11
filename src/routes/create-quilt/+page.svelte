@@ -5,6 +5,7 @@
   import Dropdown from "../../components/dropdown.svelte";
   import FolderInput from "../../components/folderInput.svelte";
   import Button from "../../components/button.svelte";
+  import TextInput from "../../components/textInput.svelte";
 
   type Folder =
     | {
@@ -19,7 +20,12 @@
     folder: string;
   };
 
-  type QuiltStatusState = "NotStarted" | "InProgress" | "Finished";
+  type QuiltStatusState =
+    | "NotStarted"
+    | "InProgress"
+    | "Finished"
+    | "CreatingAnimation"
+    | "CreatedAnimation";
 
   type QuiltStatus = {
     status: QuiltStatusState;
@@ -39,6 +45,7 @@
   });
 
   let quiltFolder: string = $state("");
+  let framerate = $state(24);
 
   let views: DisplayInfo = $state(DISPLAYS[0]);
   let dropdownOptions = $state(
@@ -101,6 +108,7 @@
       outputFolder: quiltFolder,
       columns: views.layout[0],
       rows: views.layout[1],
+      framerate,
     });
   };
 
@@ -192,6 +200,11 @@
       <Dropdown bind:options={dropdownOptions} bind:selected={views} />
     </div>
     <div class="column form-input">
+      <h4>What framerate?</h4>
+      <small>Set to -1 if not rendering an animation</small>
+      <TextInput type="number" bind:value={framerate} />
+    </div>
+    <div class="column form-input">
       <h4>Quilt Folder</h4>
       <small>Where should the final quilt(s) be saved</small>
       <FolderInput callback={quiltFolderCallback}>Select Folder</FolderInput>
@@ -205,6 +218,7 @@
         disabled={sortedFolder.status !== "ok" ||
           !quiltFolder ||
           !views ||
+          !framerate ||
           quiltStatus.status !== "NotStarted"}
         onClick={makeQuilt}
         ariaLabel="Create Quilts"
@@ -218,6 +232,11 @@
           >
         {:else if quiltStatus.status === "Finished"}
           <strong>Quilts Created</strong>
+        {:else if quiltStatus.status === "CreatingAnimation"}
+          <div class="loader"></div>
+          <strong>Rendering Animation</strong>
+        {:else if quiltStatus.status === "CreatedAnimation"}
+          <strong>Animation Created</strong>
         {/if}
       </Button>
     </div>
