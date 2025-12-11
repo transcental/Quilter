@@ -38,10 +38,6 @@ jobs:
         with:
           bun-version: latest
 
-      - name: download ffmpeg
-        # Use bun to download the ffmpeg sidecar before building so the binary is available
-        run: bun run download-ffmpeg
-
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -55,7 +51,11 @@ jobs:
 
       - name: install frontend dependencies
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
-        run: bun install # change this to npm or pnpm depending on which one you use.
+        run: bun install --dev # change this to npm or pnpm depending on which one you use.
+
+      - name: download ffmpeg
+        # Use bun to download the ffmpeg sidecar before building so the binary is available
+        run: bun run download-ffmpeg
 
       - uses: tauri-apps/tauri-action@v0
         env:
